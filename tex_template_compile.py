@@ -226,7 +226,7 @@ def main():
                 pass
 
             latex_string += f"""
-\\begin{{tabularx}}{{\\textwidth}}{{l X X X}}
+\\begin{{tabularx}}{{\\textwidth}}{{l l p{{5cm}} l}}
 \\makecell[l]{{\\textbf{{ISCN}}\\\\\\textbf{{State}}}} & 
 \\makecell[l]{{\\textbf{{SNP number}}\\\\\\textbf{{Length}}}} & 
 \\makecell[l]{{\\textbf{{Classification (Score)}}\\\\\\textbf{{Evidences}}}} &
