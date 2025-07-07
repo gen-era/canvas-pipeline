@@ -236,7 +236,6 @@ latex_string += f"""
 {cnv_conf} \\\\
 \\hline
 \\end{{tabularx}}
-"""
 
 \\subsubsection{{Known or Predicted Dosage-Sensitive Genes}}
 {known_genes_str}
