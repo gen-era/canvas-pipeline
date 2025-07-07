@@ -225,8 +225,8 @@ def main():
             else:
                 pass
 
-            latex_string += f"""
-\\begin{{tabularx}}{{\\textwidth}}{{l l p{{4.5cm}} p{{4.5cm}} l}}
+latex_string += f"""
+\\begin{{tabularx}}{{\\textwidth}}{{l l p{{5.5cm}} p{{5.5cm}} l}}
 \\textbf{{ISCN}} & \\textbf{{State}} & \\textbf{{Classification (Score)}} & \\textbf{{Evidences}} & \\textbf{{Confidence}} \\\\
 \\hline
 {iscn} & 
