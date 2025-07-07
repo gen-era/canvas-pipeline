@@ -225,14 +225,16 @@ def main():
             else:
                 pass
 
-latex_string += f"""
-\\begin{{tabularx}}{{\\textwidth}}{{l l p{{5.5cm}} p{{5.5cm}} l}}
-\\textbf{{ISCN}} & \\textbf{{State}} & \\textbf{{Classification (Score)}} & \\textbf{{Evidences}} & \\textbf{{Confidence}} \\\\
+            latex_string += f"""
+\\begin{{tabularx}}{{\\textwidth}}{{m{{4.5cm}} m{{3cm}} m{{7cm}} m{{2.5cm}}}}
+\\begin{{tabular}}[t]{{@{{}}l@{{}}}} \\textbf{{ISCN}} \\\\ \\textbf{{State}} \\end{{tabular}} &
+\\begin{{tabular}}[t]{{@{{}}l@{{}}}} \\textbf{{SNP number}} \\\\ \\textbf{{Length}} \\end{{tabular}} &
+\\begin{{tabular}}[t]{{@{{}}l@{{}}}} \\textbf{{Classification (Score)}} \\\\ \\textbf{{Evidences}} \\end{{tabular}} &
+\\textbf{{Confidence}} \\\\
 \\hline
-{iscn} & 
-{cnv["Type"]} & 
-{cnv["Classification"]} ({cnv.get("Total score", "N/A")}) & 
-{evidence_str} & 
+\\begin{{tabular}}[t]{{@{{}}l@{{}}}} {iscn} \\\\ {cnv["Type"]} \\end{{tabular}} &
+\\begin{{tabular}}[t]{{@{{}}l@{{}}}} {num_snp} \\\\ {cnv_length} \\end{{tabular}} &
+\\begin{{tabular}}[t]{{@{{}}l@{{}}}} {cnv["Classification"]} ({cnv.get("Total score", "N/A")}) \\\\ {evidence_str if evidence_str else ""} \\end{{tabular}} &
 {cnv_conf} \\\\
 \\hline
 \\end{{tabularx}}
