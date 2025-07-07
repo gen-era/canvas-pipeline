@@ -234,7 +234,7 @@ def main():
 \\hline
 \\makecell[l]{{{iscn}\\\\{cnv["Type"]}}} & 
 \\makecell[l]{{{num_snp}\\\\{cnv_length}}} & 
-\\makecell[l]{{{cnv["Classification"]} ({cnv.get("Total score", "N/A")})\\\\{evidence_str}}} &
+\\makebox[7cm][l]{{{cnv["Classification"]} ({cnv.get("Total score", "N/A")}) {evidence_str}}} &
 \\makecell[l]{{{cnv_conf}}} \\\\
 \\hline
 \\end{{tabularx}}
