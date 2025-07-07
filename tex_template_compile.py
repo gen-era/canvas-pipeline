@@ -226,18 +226,17 @@ def main():
                 pass
 
             latex_string += f"""
-\\begin{{tabularx}}{{\\textwidth}}{{l l p{{5cm}} l}}
-\\makecell[l]{{\\textbf{{ISCN}}\\\\\\textbf{{State}}}} & 
-\\makecell[l]{{\\textbf{{SNP number}}\\\\\\textbf{{Length}}}} & 
-\\makecell[l]{{\\textbf{{Classification (Score)}}\\\\\\textbf{{Evidences}}}} &
-\\makecell[l]{{\\textbf{{Confidence}}}} \\\\
+\\begin{{tabularx}}{{\\textwidth}}{{l l p{{4.5cm}} p{{4.5cm}} l}}
+\\textbf{{ISCN}} & \\textbf{{State}} & \\textbf{{Classification (Score)}} & \\textbf{{Evidences}} & \\textbf{{Confidence}} \\\\
 \\hline
-\\makecell[l]{{{iscn}\\\\{cnv["Type"]}}} & 
-\\makecell[l]{{{num_snp}\\\\{cnv_length}}} & 
-\\makebox[7cm][l]{{{cnv["Classification"]} ({cnv.get("Total score", "N/A")}) {evidence_str}}} &
-\\makecell[l]{{{cnv_conf}}} \\\\
+{iscn} & 
+{cnv["Type"]} & 
+{cnv["Classification"]} ({cnv.get("Total score", "N/A")}) & 
+{evidence_str} & 
+{cnv_conf} \\\\
 \\hline
 \\end{{tabularx}}
+"""
 
 \\subsubsection{{Known or Predicted Dosage-Sensitive Genes}}
 {known_genes_str}
