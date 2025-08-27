@@ -37,7 +37,32 @@ def escape_latex(text):
         if char != "\\":  # Skip backslash as it's already handled
             text = text.replace(char, escape)
     return text
+    
+def get_confidence(cnv: dict) -> str:
+    """
+    CNV kaydındaki 'confidence' bilgisini güvenli şekilde döndürür.
+    'conf', 'Confidence', 'confidence' gibi anahtarları dener.
+    'conf=...' formatını ayıklar.
+    Boş/undefined/NA/N/A/None vb. değerlerde '-' döndürür.
+    """
+    raw = None
+    for k in ("conf", "Confidence", "confidence"):
+        if k in cnv and cnv[k] not in (None, ""):
+            raw = str(cnv[k])
+            break
 
+    if raw is None:
+        return "-"
+
+    # 'conf=123.4' gibi durumlar için
+    if "=" in raw:
+        raw = raw.split("=", 1)[1]
+
+    val = raw.strip()
+    if val.lower() in ("undefined", "na", "n/a", "none", ""):
+        return "-"
+
+    return val
 
 # Function to process CNV file
 def process_cnv_file(file_path):
@@ -144,7 +169,7 @@ def main():
 
             num_snp = cnv["numsnp_info"].split("=")[1]
             cnv_length = cnv["length_info"].split("=")[1]
-            cnv_conf = cnv["conf"].split("=")[1]
+            cnv_conf = get_confidence(cnv)
             iscn = cnv["iscn"].replace("_", "\\_")
 
             evidences = [
