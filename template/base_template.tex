@@ -5,72 +5,51 @@
 \usepackage[T1]{fontenc}          % encoding for turkish chars
 \usepackage{makecell}             % line break in cells
 
-\usepackage[paper=a4paper,top=0.5cm,bottom=1.5cm,left=1.5cm,right=1.5cm,headsep=0.5cm,headheight=5cm,includehead,includefoot,twoside
-%showframe
-]{geometry}
+\usepackage[paper=a4paper,top=0.5cm,bottom=1.5cm,left=1.5cm,right=1.5cm,headsep=0.5cm,headheight=5cm,includehead,includefoot,twoside]{geometry}
 
 \usepackage[scaled]{helvet}       % for titles and such
 \usepackage{fontawesome}          % for symbols
-\usepackage{makecell}             % line break in cells
 \usepackage{tabularx}             % header footer
-
 \usepackage{booktabs}             % tables
 \usepackage{graphicx}
 \usepackage{fancyhdr}             % header footer
 
-
 \usepackage[dvipsnames]{xcolor}   % colored text
 \usepackage{titlesec}             % title format
 \usepackage{lastpage}             % page numbering
-\usepackage{ragged2e}		  % justifying content
+\usepackage{ragged2e}             % justifying content
 
-%%%%%%%%%%%%%%%%%%  %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%  CUSTOM %%%%%%%%%%%%%%%%%%%%%
+\newcommand{\institute}{%%institute%%}
+\newcommand{\protocolId}{%%protocolId%%}
+\newcommand{\summaryDate}{%%summaryDate%%}
+\newcommand{\chipId}{%%chipId%%}
+\newcommand{\chipPosition}{%%chipPosition%%}
+\newcommand{\chipType}{%%chipType%%}
+\newcommand{\canvasVersion}{%%canvasVersion%%}
 
-\newcommand{\institute}{
-  %%institute%%
-}
-\newcommand{\protocolId}{
-  %%protocolId%%
-}
-\newcommand{\summaryDate}{
-  %%summaryDate%%
-}
-\newcommand{\chipId}{
-  %%chipId%%
-}
-\newcommand{\chipPosition}{
-  %%chipPosition%%
-}
-\newcommand{\chipType}{
-  %%chipType%%
-}
-\newcommand{\canvasVersion}{
-  %%canvasVersion%%
-}
-
-%%%%%%%%%%%%% MARKUP %%%%%%%%%%%%%%%%
+% Renkler
 \definecolor{myfgcolor}{HTML}{2E3440}
 \definecolor{mybgcolor}{HTML}{ECEFF4}
 \definecolor{red}{HTML}{BF616A}
+
+% Tek noktadan logo boyutu kontrolü
+\newcommand{\logoW}{2.0cm} % gerekirse 1.8cm / 2.2cm yap
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Row tuning
 \renewcommand{\tabularxcolumn}[1]{>{\centering\arraybackslash}p{#1}}
 \renewcommand{\arraystretch}{1.4}
 \renewcommand{\arrayrulewidth}{.6pt}
-\newcolumntype{J}{>{\justifying\arraybackslash}X} % New type for fully justified
-\newcolumntype{L}{>{\raggedright\arraybackslash}X} % New type for fully justified
+\newcolumntype{J}{>{\justifying\arraybackslash}X}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
 
 % rule thickness
 \setlength\heavyrulewidth{2pt}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % gaps
 \renewcommand\cellgape{\Gape[2pt]}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section title format
 \titleformat{\section}
 {\sffamily\huge\bfseries}
@@ -90,132 +69,83 @@
 {}
 {0pt}
 {\textcolor{myfgcolor}}[]
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%% HEADER FOOTER %%%%%%%%%%%%%%
 \pagestyle{fancy}
 \fancyhf{}
 \renewcommand{\headrulewidth}{0pt}
 
-
-% Header
+% -------- Header: Sol sayfalar (LO) --------
 \fancyhead[LO]{%
-    \begin{tabularx}{\textwidth}{m{3.0cm} X m{1.0cm}}
-        \includegraphics[width=3cm]{canvas_logo.png} &
+    \begin{tabularx}{\textwidth}{m{2.2cm} X m{2.2cm}}
+        \includegraphics[width=\logoW]{canvas_logo.png} &
         \centering\bfseries\sffamily\Huge{Array Özeti} &
-        \sffamily{\thepage / \pageref{LastPage}}
-    \end{tabularx}%
-        \bigbreak
+        \centering\includegraphics[width=\logoW]{genera_logo.png}
+    \end{tabularx}\\[-0.15em]
+    {\centering\sffamily\small \thepage\ /\ \pageref{LastPage}\par}
+    \vspace{0.35em}
     \begin{tabularx}{\textwidth}{m{7.0cm} L m{4.0cm}}
-            \hline
-            \bfseries{Hasta Kodu} &
-            \bfseries{Tarih} &
-            \bfseries{Kurum} \\
-            
-            \sffamily \protocolId &
-            \sffamily \summaryDate &
-            \sffamily \institute \\
-            
-            \bfseries{Çip tipi} &
-            \bfseries{Çip barkodu} &
-            \bfseries{Position} \\
-            
-            \sffamily \chipType &
-            \sffamily \chipId &
-            \sffamily \chipPosition \\
-            
-            \hline
+        \hline
+        \bfseries{Hasta Kodu} & \bfseries{Tarih} & \bfseries{Kurum} \\
+        \sffamily \protocolId & \sffamily \summaryDate & \sffamily \institute \\
+        \bfseries{Çip tipi} & \bfseries{Çip barkodu} & \bfseries{Position} \\
+        \sffamily \chipType & \sffamily \chipId & \sffamily \chipPosition \\
+        \hline
     \end{tabularx}%
 }
+
+% -------- Header: Sağ sayfalar (RE) --------
 \fancyhead[RE]{%
-    \begin{tabularx}{\textwidth}{m{1.0cm} X m{3.0cm}}
-        \sffamily{\thepage / \pageref{LastPage}} &
+    \begin{tabularx}{\textwidth}{m{2.2cm} X m{2.2cm}}
+        \includegraphics[width=\logoW]{genera_logo.png} &
         \centering\bfseries\sffamily\Huge{Array Özeti} &
-        \includegraphics[width=3cm]{canvas_logo.png} 
-    \end{tabularx}%
-        \bigbreak
+        \centering\includegraphics[width=\logoW]{canvas_logo.png}
+    \end{tabularx}\\[-0.15em]
+    {\centering\sffamily\small \thepage\ /\ \pageref{LastPage}\par}
+    \vspace{0.35em}
     \begin{tabularx}{\textwidth}{m{7.0cm} L m{4.0cm}}
-            \hline
-            \bfseries{Hasta Kodu} &
-            \bfseries{Tarih} &
-            \bfseries{Kurum} \\
-            
-            \sffamily \protocolId &
-            \sffamily \summaryDate &
-            \sffamily \institute \\
-            
-            \bfseries{Çip tipi} &
-            \bfseries{Çip barkodu} &
-            \bfseries{Position} \\
-            
-            \sffamily \chipType &
-            \sffamily \chipId &
-            \sffamily \chipPosition \\
-            
-            \hline
+        \hline
+        \bfseries{Hasta Kodu} & \bfseries{Tarih} & \bfseries{Kurum} \\
+        \sffamily \protocolId & \sffamily \summaryDate & \sffamily \institute \\
+        \bfseries{Çip tipi} & \bfseries{Çip barkodu} & \bfseries{Position} \\
+        \sffamily \chipType & \sffamily \chipId & \sffamily \chipPosition \\
+        \hline
     \end{tabularx}%
 }
-% Footer
-\fancyfoot[RE]{%
-    \hrule
-    \sffamily
-    \begin{tabularx}{\textwidth}{m{7.0cm} m{7.0cm} m{3.0cm} }
-        \raisebox{-.6cm}{\includegraphics[width=3cm]{canvas_logo.png}} &
-        
-        \makecell[tl]{SNP array summary} &
-        
-        \makecell[tl]{\canvasVersion}
-    \end{tabularx}%
-}
+
+% -------- Footer: Sol sayfalar (LO) --------
 \fancyfoot[LO]{%
     \hrule
     \sffamily
-    \begin{tabularx}{\textwidth}{m{7.0cm} m{7.0cm} m{3.0cm} }
-	\makecell[tl]{\canvasVersion} &
-        \makecell[tl]{SNP array summary} &
-        \raisebox{-.6cm}{\includegraphics[width=3cm]{canvas_logo.png}}
-    \end{tabularx}%
+    \begin{tabularx}{\textwidth}{m{3.0cm} X m{3.0cm}}
+        \includegraphics[width=\logoW]{canvas_logo.png} &
+        \centering SNP array summary &
+        \includegraphics[width=\logoW]{genera_logo.png}
+    \end{tabularx}\\[-0.3em]
+    \sffamily \canvasVersion
 }
-%%%%%%%%%%%%% HEADER FOOTER SONU %%%%%%%%%%%%%%
 
+% -------- Footer: Sağ sayfalar (RE) --------
+\fancyfoot[RE]{%
+    \hrule
+    \sffamily
+    \begin{tabularx}{\textwidth}{m{3.0cm} X m{3.0cm}}
+        \includegraphics[width=\logoW]{genera_logo.png} &
+        \centering SNP array summary &
+        \includegraphics[width=\logoW]{canvas_logo.png}
+    \end{tabularx}\\[-0.3em]
+    \sffamily \canvasVersion
+}
 
+%%%%%%%%%%%%% DOCUMENT %%%%%%%%%%%%%%
 \begin{document}
-
 
 % https://tex.stackexchange.com/questions/32178/usepackageturkishbabel-and-includegraphics-inconcistency
 \shorthandoff{=}
 
-%\begin{titlepage}
-%% Title
-%\begin{center}
-%\Huge \textsf{Array Özeti}
-%\end{center}
-%\vspace*{2cm}
-%% Include the logo (SVG format)
-%\begin{center}
-%\includegraphics[width=7cm]{canvas_logo.png}
-%
-%\vspace*{4cm}
-%
-%% Details
-%\begin{tabular}{l l l l}
-%\textsf{Kurum: \institute } & \hspace{1cm} & \textsf{Çip tipi : \chipType} \\ \\
-%\textsf{Protokol ID: \protocolId} & \hspace{1cm} & \textsf{Çip Barkodu: \chipId} \\ \\
-%\textsf{Özet tarihi: \summaryDate} & \hspace{1cm} & \textsf{Pozisyon: \chipPosition} \\ \\
-%\end{tabular}
-%
-%\vspace*{3cm}
-%
-%% Footer
-%\textsf{\LARGE CaNVaS} \\[0.5cm]
-%\textsf{Versiyon: \canvasVersion}
-%\end{center}
-%\end{titlepage}
-
 %%CHIPSAMPLENOTES%%
 
 \section{Bulgular}
-
 %%BULGULAR%%
 
 %\section{Genom resmi}
@@ -228,11 +158,11 @@
 
 Teslim alınan DNA örnekleri Illumina Infinium Global Screening Array-24 v1.0 (GSA-Cyto) mikroarray çipi ile çalışılmış ve Illumina iScan platformunda taraması yapılmıştır. Bu yöntem ile örneğin tüm genomu ~700,000 probe ile taranmaktadır, yaklaşık 4485 gen hedeflenmektedir. Illumina mikroarray çip problarının medyan aralığı ~3.9kb/2.3kb’dır. Ortalama çözünürlüğü ~10kb / ~25kb’dır.
 
-Gerçekleştirilen çalışmada, DNA örneğinin analizi sonrasında hesaplanan genotipleme oranı (Call Rate)>0.99 olduğu tespit edilmiştir. Bu değer SNP belirteçlerinin çok yüksek doğruluk oranı ile genotiplendirildiğini göstermektedir. CNV (Copy Number Variation) analizii tüm genom SNP verisinden BAF ve LRR değerleri dikkate alınarak hesaplanmıştır. Kopya sayısı varyasyonları Biodiscovery tarafından geliştirilen NxClinical (v.6.0) analiz programları aracılığıyla tespit edilmekte ve görselleştirilmektedir. İlgili pozisyonlar Human Genome Build 37 (GRCh37/hg19) referans alınarak raporlanmışır.
+Gerçekleştirilen çalışmada, DNA örneğinin analizi sonrasında hesaplanan genotipleme oranı (Call Rate)>0.99 olduğu tespit edilmiştir. Bu değer SNP belirteçlerinin çok yüksek doğruluk oranı ile genotiplendirildiğini göstermektedir. CNV (Copy Number Variation) analizi tüm genom SNP verisinden BAF ve LRR değerleri dikkate alınarak hesaplanmıştır. Kopya sayısı varyasyonları Biodiscovery tarafından geliştirilen NxClinical (v.6.0) analiz programları aracılığıyla tespit edilmekte ve görselleştirilmektedir. İlgili pozisyonlar Human Genome Build 37 (GRCh37/hg19) referans alınarak raporlanmıştır.
 
-BAF (B Allel Frekansı): İlgili SNP için B alleli sinyalinin toplam sinyal miktarına oranını gösterir. 0 ve 1 değerleri homozigotluğu, 0.5 değeri heterozigotluğu gösterir. Kopya sayısı değişimlerinde veya mozaizim durumlarında ara değerler (örn: 0.25 / 0.75) alabilir. 
+BAF (B Allel Frekansı): İlgili SNP için B alleli sinyalinin toplam sinyal miktarına oranını gösterir. 0 ve 1 değerleri homozigotluğu, 0.5 değeri heterozigotluğu gösterir. Kopya sayısı değişimlerinde veya mozaizim durumlarında ara değerler (örn: 0.25 / 0.75) alabilir.
 
-LRR (Log R Ratio): Belirtilen SNP için ortalama toplam sinyal miktarının logaritmik ifadesidir. Kopya sayısı hakkında bilgi verir. 0 değeri 2 kopya sayısını, pozitif değerler artmış, negatif  değerler  ise  azalmış  kopya sayısını işaret eder.
+LRR (Log R Ratio): Belirtilen SNP için ortalama toplam sinyal miktarının logaritmik ifadesidir. Kopya sayısı hakkında bilgi verir. 0 değeri 2 kopya sayısını, pozitif değerler artmış, negatif değerler ise azalmış kopya sayısını işaret eder.
 
 Tespiti yapılan varyantlar, ISCN 2020 nomenklatürüne göre adlandırılmıştır.
 
@@ -242,25 +172,25 @@ Bu yöntem ile yapılan çalışmalar sonucunda nokta mutasyonları, kromozomlar
 
 Kopya kaybı için:
 \begin{description}
-	\item[1A.] Protein kodlanan bir bölge veya işlevsel olarak önemli olduğu bilinen bölge içermektedir.
-	\item[1B.] Protein kodlanan veya işlevsel olarak önemli olduğu bilinen herhangi bir bölge içermemektedir.
-	\item[2A.] Bilinen bir HI (Haploinsufficient) geni/ genomik bölge ile tam örtüşmektedir. 
-	\item[2F.] Bilinen Benin bir bölge ile tam örtüşmektedir.
-	\item[2H.] Çoklu HI öngörücüleri, aralıktaki EN AZ BİR genin haployetersizliği olduğunu göstermektedir.
-	\item[3A.] Bölgedeki Protein Kodlayan Gen Sayısı: 0-24 gen
-	\item[3B.] Bölgedeki Protein Kodlayan Gen Sayısı: 25-34 gen
-	\item[3C.] Bölgedeki Protein Kodlayan Gen Sayısı: 35 gen ve fazlası
-	\item[4L.] Kontrollere kıyasla vakalarda (tutarlı, spesifik, iyi tanımlanmış bir fenotip ile) gözlemler arasında istatistiksel olarak anlamlı artış bulunmaktadır.
-	\item[4M.] Kontrollere kıyasla vakalardaki gözlemler arasında istatistiksel olarak anlamlı artış bulunmaktadır. (tutarlı, spesifik olmayan fenotip VEYA bilinmeyen fenotip olmadan)
-	\item[4N.] Vakalar ve kontrolleri arasında istatistiksel olarak anlamlı bir fark yoktur.
-	\item[4O.] Yaygın popülasyon varyasyonu ile örtüşme vardır (> \%1). 
+    \item[1A.] Protein kodlanan bir bölge veya işlevsel olarak önemli olduğu bilinen bölge içermektedir.
+    \item[1B.] Protein kodlanan veya işlevsel olarak önemli olduğu bilinen herhangi bir bölge içermemektedir.
+    \item[2A.] Bilinen bir HI (Haploinsufficient) geni/ genomik bölge ile tam örtüşmektedir.
+    \item[2F.] Bilinen Benin bir bölge ile tam örtüşmektedir.
+    \item[2H.] Çoklu HI öngörücüleri, aralıktaki EN AZ BİR genin haployetersizliği olduğunu göstermektedir.
+    \item[3A.] Bölgedeki Protein Kodlayan Gen Sayısı: 0-24 gen
+    \item[3B.] Bölgedeki Protein Kodlayan Gen Sayısı: 25-34 gen
+    \item[3C.] Bölgedeki Protein Kodlayan Gen Sayısı: 35 gen ve fazlası
+    \item[4L.] Kontrollere kıyasla vakalarda (tutarlı, spesifik, iyi tanımlanmış bir fenotip ile) gözlemler arasında istatistiksel olarak anlamlı artış bulunmaktadır.
+    \item[4M.] Kontrollere kıyasla vakalardaki gözlemler arasında istatistiksel olarak anlamlı artış bulunmaktadır. (tutarlı, spesifik olmayan fenotip VEYA bilinmeyen fenotip olmadan)
+    \item[4N.] Vakalar ve kontrolleri arasında istatistiksel olarak anlamlı bir fark yoktur.
+    \item[4O.] Yaygın popülasyon varyasyonu ile örtüşme vardır (> \%1).
 \end{description}
 
 Kopya kazancı için:
 \begin{description}
 \item[1A.] Protein kodlanan bir bölge veya işlevsel olarak önemli olduğu bilinen bölge içermektedir.
 \item[1B.] Protein kodlanan veya işlevsel olarak önemli olduğu bilinen herhangi bir bölge içermemektedir.
-\item[2A.] Bilinen bir HI (Haploinsufficient) geni/genomik bölge ile tam örtüşmektedir. 
+\item[2A.] Bilinen bir HI (Haploinsufficient) geni/genomik bölge ile tam örtüşmektedir.
 \item[2C.] Bilinen benin bir bölge içermektedir.
 \item[2D.] Bilinen benin kopya sayısı kazancından daha küçük ve ek protein kodlayan genler içermemektedir
 \item[2E.] Bilinen benin kopya sayısı kazancından daha büyük, ek protein kodlayan genler içermemektedir.
@@ -270,7 +200,7 @@ Kopya kazancı için:
 \item[4L.] Kontrollere kıyasla vakalarda (tutarlı, spesifik, iyi tanımlanmış bir fenotip ile) gözlemler arasında istatistiksel olarak anlamlı artış bulunmaktadır.
 \item[4M.] Kontrollere kıyasla vakalardaki gözlemler arasında istatistiksel olarak anlamlı artış bulunmaktadır. (tutarlı, spesifik olmayan fenotip VEYA bilinmeyen fenotip olmadan)
 \item[4N.] Vakalar ve kontrolleri arasında istatistiksel olarak anlamlı bir fark yoktur.
-\item[4O.] Yaygın popülasyon varyasyonu ile örtüşme vardır (> \%1). 
+\item[4O.] Yaygın popülasyon varyasyonu ile örtüşme vardır (> \%1).
 \end{description}
 
 Bu analiz notlarında sadece klinik bilgiler ile uyumlu ya da analiz sırasında anlamlı bulunan kopya sayısı değişimleri paylaşılmaktadır. Klinik ile bir ilişkisi bulunmayan ya da hakkında veri tabanlarında kesin bir bilgisi olmayan ve benin/muhtemel benin sınıfında olan değişimler analiz notlarına eklenmemiştir.
@@ -278,34 +208,34 @@ Bu analiz notlarında sadece klinik bilgiler ile uyumlu ya da analiz sırasında
 Hazırlanan bu analiz notu genetik tanı uzmanı tarafından incelenmeli ve rapor haline getirilmelidir. Sonuçlar klinik temelde ve literatür verileri eşliğinde değerlendirilmelidir.
 
 \begin{thebibliography}{9}
-	\bibitem{clingen}
-		ClinGen: https://www.clinicalgenome.org/, ClinGen Dosage Sensitivity Curation Page: https://dosage.clinicalgenome.org/
-	\bibitem{isca}
-		The International Standard Cytogenomic Array (ISCA) Consortium: http://dbsearch.clinicalgenome.org/search/
-	\bibitem{decipher}
-		DECIPHER database: www.decipher.sanger.ac.uk
-	\bibitem{rare}
-		UNIQUE Database: http://www.rarechromo.org
-	\bibitem{orpha}
-		OrphaNet: http://www.orpha.net
-	\bibitem{dgv}
-		Database of Genomic Variants: http://dgv.tcag.ca
-	\bibitem{clinvar}
-		ClinVar: https://www.ncbi.nlm.nih.gov/clinvar/
-	\bibitem{hgmd}
-		HGMD® (Human Gene Mutation Database) Professional 2020.1
-	\bibitem{omim}
-		OMIM (Online Mendelian Inheritance in Man): https://www.omim.org/
-	\bibitem{dbsnp}
-		dbSNP: https://www.ncbi.nlm.nih.gov/snp/
-	\bibitem{ncbiview}
-		NCBI Variation Viewer database: https://www.ncbi.nlm.nih.gov/variation/view/
-	\bibitem{hpo}
-		HPO (The Human Phenotype Ontology): https://hpo.jax.org/app/
-	\bibitem{acmg}
-		Technical standards for the interpretation and reporting of constitutional copy-number variants: a joint consensus recommendation of the American College of Medical Genetics and Genomics (ACMG) and the Clinical Genome Resource (ClinGen). Riggs ER er al., 2020 Genet Med. 22(2):245-257 (PMID: 31690835).
-	\bibitem{jordan}
-		McGowan-Jordan, Jean, Ros J. Hastings, and Sarah Moore, eds. ISCN 2020: An International System for Human Cytogenomic Nomenclature (2020). Reprint Of: Cytogenetic and Genome Research 2020, Vol. 160, No. 7-8. Karger, S, 2020.
+    \bibitem{clingen}
+        ClinGen: https://www.clinicalgenome.org/, ClinGen Dosage Sensitivity Curation Page: https://dosage.clinicalgenome.org/
+    \bibitem{isca}
+        The International Standard Cytogenomic Array (ISCA) Consortium: http://dbsearch.clinicalgenome.org/search/
+    \bibitem{decipher}
+        DECIPHER database: www.decipher.sanger.ac.uk
+    \bibitem{rare}
+        UNIQUE Database: http://www.rarechromo.org
+    \bibitem{orpha}
+        OrphaNet: http://www.orpha.net
+    \bibitem{dgv}
+        Database of Genomic Variants: http://dgv.tcag.ca
+    \bibitem{clinvar}
+        ClinVar: https://www.ncbi.nlm.nih.gov/clinvar/
+    \bibitem{hgmd}
+        HGMD® (Human Gene Mutation Database) Professional 2020.1
+    \bibitem{omim}
+        OMIM (Online Mendelian Inheritance in Man): https://www.omim.org/
+    \bibitem{dbsnp}
+        dbSNP: https://www.ncbi.nlm.nih.gov/snp/
+    \bibitem{ncbiview}
+        NCBI Variation Viewer database: https://www.ncbi.nlm.nih.gov/variation/view/
+    \bibitem{hpo}
+        HPO (The Human Phenotype Ontology): https://hpo.jax.org/app/
+    \bibitem{acmg}
+        Technical standards for the interpretation and reporting of constitutional copy-number variants: a joint consensus recommendation of the American College of Medical Genetics and Genomics (ACMG) and the Clinical Genome Resource (ClinGen). Riggs ER er al., 2020 Genet Med. 22(2):245-257 (PMID: 31690835).
+    \bibitem{jordan}
+        McGowan-Jordan, Jean, Ros J. Hastings, and Sarah Moore, eds. ISCN 2020: An International System for Human Cytogenomic Nomenclature (2020). Reprint Of: Cytogenetic and Genome Research 2020, Vol. 160, No. 7-8. Karger, S, 2020.
 \end{thebibliography}
 
 \end{document}
