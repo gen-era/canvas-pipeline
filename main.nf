@@ -21,6 +21,7 @@ params.sampleId = ""
 params.position = ""
 params.chip_type = ""
 params.version = ""
+params.include_plots = false
 
 params.cnv_bed = ""
 params.cnv_pk = ""
@@ -73,6 +74,7 @@ workflow {
             params.institute,
             params.chip_type,
             params.version,
+            params.include_plots,
             tex_template
         )
         println(cnvs)
@@ -492,12 +494,15 @@ process maketemplatefromcnv {
     val institute 
     val chip_type 
     val version 
+    val include_plots 
     path tex_template
 
     output:
     tuple val(sampleId), path("${sampleId}.tex"), path(plot_dir), val(protocol_id)
 
     script:
+    def includePlotsArg = include_plots ? '--include_plots' : ''
+
     """
     python3 ${projectDir}/tex_template_compile.py \
         --tex_template ${tex_template} \
@@ -508,7 +513,8 @@ process maketemplatefromcnv {
         --protocol_id "${protocol_id}" \
         --institute "${institute}" \
         --chip_type "${chip_type}" \
-        --version "${version}"
+        --version "${version}" \
+        ${includePlotsArg}
     """
 }
 
