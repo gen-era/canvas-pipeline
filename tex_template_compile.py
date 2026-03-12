@@ -314,10 +314,10 @@ def main():
 """
             if bulgu_note:
                 latex_string += f"""\\noindent\\textbf{{Not:}} {bulgu_note}\n\n"""
-            latex_string += f"""\\noindent\\textbf{{Bilinen veya tahmin edilen Dosage-Sensitive Genler:}}
+            latex_string += f"""\\noindent\\textbf{{Bilinen veya Tahmin Edilen Dosage-Sensitive Genler:}}
 {known_genes_str}
 
-\\noindent\\textbf{{Protein kodlayan genler:}}
+\\noindent\\textbf{{Protein Kodlayan Genler:}}
 {all_genes_str}
 
 \\vspace{{0.5cm}}
