@@ -3,17 +3,14 @@ from pathlib import Path
 import argparse
 import csv
 import json
+import os
 import re
 from urllib.parse import quote
 
 
 def escape_latex(text):
-    """
-    Escape special LaTeX characters in text.
-    """
     if not isinstance(text, str):
         return text
-
     latex_special_chars = {
         "&": "\\&",
         "%": "\\%",
@@ -32,7 +29,6 @@ def escape_latex(text):
         "`": "\\textasciigrave{}",
         "'": "\\textquotesingle{}",
     }
-
     text = text.replace("\\", "\\textbackslash{}")
     for char, escape in latex_special_chars.items():
         if char != "\\":
@@ -41,32 +37,22 @@ def escape_latex(text):
 
 
 def get_confidence(cnv: dict) -> str:
-    """
-    CNV kaydındaki 'confidence' bilgisini güvenli şekilde döndürür.
-    """
     raw = None
     for k in ("conf", "Confidence", "confidence"):
         if k in cnv and cnv[k] not in (None, ""):
             raw = str(cnv[k])
             break
-
     if raw is None:
         return "-"
-
     if "=" in raw:
         raw = raw.split("=", 1)[1]
-
     val = raw.strip()
     if val.lower() in ("undefined", "na", "n/a", "none", ""):
         return "-"
-
     return val
 
 
 def get_region_from_cnv(cnv: dict):
-    """
-    CNV'den GRCh37 bölge bilgisini (chr, start, end) döndürür.
-    """
     chr_info = cnv.get("chr_info")
     if chr_info and ":" in chr_info and "-" in chr_info:
         chrom, start_end = chr_info.split(":", 1)
@@ -74,35 +60,28 @@ def get_region_from_cnv(cnv: dict):
         if not chrom.startswith("chr"):
             chrom = "chr" + chrom
         return chrom.strip(), start.strip(), end.strip()
-
     chrom = str(cnv.get("Chromosome") or "").strip()
     if not chrom:
         return None, None, None
     if not chrom.startswith("chr"):
         chrom = "chr" + chrom
-
     start = cnv.get("Start")
     end = cnv.get("End")
     if start is None or end is None:
         return None, None, None
-
     return chrom, str(start), str(end)
 
 
 def build_region_links_latex(cnv: dict) -> str:
-    """
-    ClinGen ve DECIPHER linklerini LaTeX \\href olarak döndürür.
-    """
-    chrom, start, end = get_region_from_cnv(cnv)
-    if chrom is None:
+    region = get_region_from_cnv(cnv)
+    if region[0] is None:
         return "---"
-
+    chrom, start, end = region
     region_param = f"{chrom}:{start}-{end}"
     clingen_url = (
         "https://search.clinicalgenome.org/kb/regions?"
         f"page=1&type=GRCh37&region={quote(region_param)}&size=25&search="
     )
-
     decipher_q = f"grch37:{chrom}:{start}-{end}"
     decipher_url = f"https://www.deciphergenomics.org/search?q={quote(decipher_q)}"
 
@@ -117,11 +96,7 @@ def build_region_links_latex(cnv: dict) -> str:
 
     clingen_safe = url_for_latex(clingen_url)
     decipher_safe = url_for_latex(decipher_url)
-
-    return (
-        f"\\makecell{{\\href{{{clingen_safe}}}{{ClinGen}} \\\\ "
-        f"\\href{{{decipher_safe}}}{{DECIPHER}}}}"
-    )
+    return f"\\makecell{{\\href{{{clingen_safe}}}{{ClinGen}} \\\\ \\href{{{decipher_safe}}}{{DECIPHER}}}}"
 
 
 def process_cnv_file(file_path):
@@ -130,15 +105,8 @@ def process_cnv_file(file_path):
         for line in f:
             parts = line.strip().split()
             (
-                chr_info,
-                numsnp_info,
-                length_info,
-                state_info,
-                file_info,
-                startsnp_info,
-                endsnp_info,
-                conf,
-                iscn,
+                chr_info, numsnp_info, length_info, state_info,
+                file_info, startsnp_info, endsnp_info, conf, iscn,
             ) = parts
             region = chr_info.split(":")
             chr_start_end = (
@@ -168,6 +136,41 @@ def process_scoresheet_file(file_path):
             clean_variant_id = variant_id.replace("_DEL", "").replace("_DUP", "")
             scoresheet_data[clean_variant_id] = dict(row)
     return scoresheet_data
+
+
+def italicize_genes(gene_str):
+    if not gene_str:
+        return "Gen içermemektedir."
+    genes = [gene.strip() for gene in str(gene_str).split(",") if gene.strip()]
+    italic_genes = ", ".join([f"\\textit{{{escape_latex(gene)}}}" for gene in genes])
+    return italic_genes if italic_genes else "Gen içermemektedir."
+
+
+def get_first_nonempty(cnv: dict, keys):
+    for key in keys:
+        val = cnv.get(key)
+        if val is None:
+            continue
+        val = str(val).strip()
+        if val and val.lower() not in ("nan", "none", "n/a", "na", "-"):
+            return val
+    return ""
+
+
+def normalize_gene_string(gene_str: str) -> str:
+    if not gene_str:
+        return ""
+    parts = re.split(r"[;,|]+", str(gene_str))
+    cleaned = []
+    seen = set()
+    for part in parts:
+        gene = part.strip()
+        if not gene:
+            continue
+        if gene not in seen:
+            seen.add(gene)
+            cleaned.append(gene)
+    return ", ".join(cleaned)
 
 
 def main():
@@ -202,10 +205,8 @@ def main():
         cnv_path = Path(args.cnv_file)
         chip_id = cnv_path.stem.split("_")[0]
         position = cnv_path.stem.split("_")[1]
-
         cnv_data = process_cnv_file(args.cnv_file)
         scoresheet_data = process_scoresheet_file(args.scoresheet_file)
-
         cnvs = {}
         for variant_id, cnv_dict in cnv_data.items():
             score_dict = scoresheet_data.get(variant_id, {})
@@ -216,23 +217,14 @@ def main():
     quality_notes = []
     bulgular_rows = []
     genes_blocks = []
-    plot_blocks = []
-
-    def italicize_genes(gene_str):
-        if not gene_str:
-            return "Gen içermemektedir."
-        genes = [gene.strip() for gene in gene_str.split(",")]
-        italic_genes = ", ".join(
-            [f"\\textit{{{escape_latex(gene)}}}" for gene in genes if gene]
-        )
-        return italic_genes if italic_genes else "Bölge Gen içermemektedir."
+    any_plot_missing = False
+    plot_images_latex = []
 
     if not cnvs:
         latex_string += (
             "Yapılan mikroarray analizi sonucunda gözlenen kopya sayısı değişimleri "
             "arasında klinik önemi olan bir bulgu gözlenmemiştir."
         )
-
     else:
         for variant_id, cnv in cnvs.items():
             if "Chromosome" not in cnv.keys():
@@ -254,26 +246,66 @@ def main():
                     evidence_value = 0.0
                 if float(evidence_value) != 0:
                     evidence_in_report[evidence] = evidence_value
+
             evidence_str = " ".join([f"{k}: {v}" for k, v in evidence_in_report.items()])
 
-            known_genes = cnv.get("Known or predicted dosage-sensitive genes", "").strip()
-            all_genes = cnv.get("All protein coding genes", "").strip()
-            known_genes_str = italicize_genes(known_genes)
-            all_genes_str = italicize_genes(all_genes)
+            dosage_genes = get_first_nonempty(cnv, [
+                "Known or predicted dosage-sensitive genes",
+                "Known or Predicted Dosage-Sensitive Genes",
+                "Bilinen veya Tahmin Edilen Dosage-Sensitive Genler",
+                "dosage_sensitive_genes",
+                "Dosage Sensitive Genes",
+            ])
+            omim_genes = get_first_nonempty(cnv, [
+                "OMIM Genes", "OMIM Genler", "omim_genes",
+            ])
+            morbid_genes = get_first_nonempty(cnv, [
+                "Morbid Genes", "Morbid Genler", "morbid_genes",
+            ])
+
+            if not omim_genes and not morbid_genes:
+                try:
+                    from omim_morbid import get_omim_morbid_for_region  # type: ignore
+                    chrom, start, end = get_region_from_cnv(cnv)
+                    if chrom and start and end:
+                        omim_list, morbid_list = get_omim_morbid_for_region(
+                            chrom, int(start), int(end)
+                        )
+                        omim_genes = ", ".join(omim_list) if omim_list else ""
+                        morbid_genes = ", ".join(morbid_list) if morbid_list else ""
+                except Exception:
+                    pass
+
+            dosage_genes = normalize_gene_string(dosage_genes)
+            omim_genes = normalize_gene_string(omim_genes)
+            morbid_genes = normalize_gene_string(morbid_genes)
+
+            dosage_genes_str = italicize_genes(dosage_genes)
+            omim_genes_str = italicize_genes(omim_genes)
+            morbid_genes_str = italicize_genes(morbid_genes)
 
             bulgu_note = ""
             if "notes" in cnv and cnv["notes"]:
-                bulgu_note = " ".join(escape_latex(note) for note in cnv["notes"])
+                if isinstance(cnv["notes"], list):
+                    bulgu_note = " ".join(escape_latex(str(note)) for note in cnv["notes"])
+                else:
+                    bulgu_note = escape_latex(str(cnv["notes"]))
 
             type_safe = str(cnv.get("Type", "")).replace("_", "\\_")
-            class_safe = str(cnv.get("Classification", "")).replace("_", "\\_")
+            class_safe_raw = str(cnv.get("Classification", ""))
+            class_safe = class_safe_raw.replace("_", "\\_")
             cnv_length_safe = str(cnv_length).replace("_", "\\_")
             links_latex = build_region_links_latex(cnv)
 
-            bulgular_rows.append(
-                (iscn, type_safe, cnv_length_safe, class_safe, links_latex)
-            )
-            genes_blocks.append((bulgu_note, known_genes_str, all_genes_str))
+            evidence_codes = " ".join(evidence_in_report.keys())
+            if evidence_codes:
+                evidence_codes_safe = evidence_codes.replace("_", "\\_")
+                class_cell = f"\\makecell{{{class_safe}\\\\({evidence_codes_safe})}}"
+            else:
+                class_cell = class_safe
+
+            bulgular_rows.append((iscn, type_safe, cnv_length_safe, class_cell, links_latex))
+            genes_blocks.append((bulgu_note, dosage_genes_str, morbid_genes_str, omim_genes_str))
 
             total_score = str(cnv.get("Total score", "N/A")).replace("_", "\\_")
             evidence_safe = (evidence_str or "—").replace("_", "\\_")
@@ -285,93 +317,94 @@ def main():
                 "confidence": cnv_conf_safe,
             })
 
-            plot_blocks.append(
-                f"""
-\\vspace{{0.5cm}}
-\\begin{{center}}
-\\includegraphics[width=0.8\\textwidth]{{ {args.plot_dir}/plot_{variant_id.replace("chr","").replace("_DEL","").replace("_DUP","")}.png }}
-\\end{{center}}
-"""
-            )
+            plot_path = f"{args.plot_dir}/plot_{variant_id.replace('chr', '').replace('_DEL', '').replace('_DUP', '')}.png"
+            if os.path.isfile(plot_path):
+                plot_path_tex = plot_path.replace("_", "\\_")
+                plot_images_latex.append(f"\\includegraphics[width=0.8\\textwidth]{{{plot_path_tex}}}")
+            else:
+                any_plot_missing = True
 
-        latex_string += """
-\\noindent
-\\setlength{\\tabcolsep}{5pt}
-\\begin{tabularx}{\\textwidth}{@{\\hspace{2pt}}m{1.2cm}@{\\hspace{4pt}}>{\\centering\\arraybackslash}m{5.2cm}@{\\hspace{4pt}}>{\\centering\\arraybackslash}m{1.7cm}@{\\hspace{4pt}}>{\\centering\\arraybackslash}m{2.3cm}@{\\hspace{6pt}}>{\\centering\\arraybackslash}p{2.2cm}@{\\hspace{4pt}}>{\\centering\\arraybackslash}X@{\\hspace{2pt}}}
-\\textbf{Bulgu No} & \\multicolumn{1}{c}{\\textbf{ISCN}} & \\multicolumn{1}{c}{\\textbf{Değişim Türü}} & \\multicolumn{1}{c}{\\makecell{\\textbf{Değişim}\\\\\\textbf{Boyutu (bp)}}} & \\multicolumn{1}{c}{\\textbf{Sınıflandırma}} & \\multicolumn{1}{c}{\\textbf{Linkler}} \\\\
-\\hline
-"""
+        latex_string += (
+            "\n\\noindent\n"
+            "\\setlength{\\tabcolsep}{5pt}\n"
+            "\\begin{tabularx}{\\textwidth}{@{\\hspace{2pt}}m{1.2cm}@{\\hspace{4pt}}"
+            ">{\\centering\\arraybackslash}m{5.2cm}@{\\hspace{4pt}}"
+            ">{\\centering\\arraybackslash}m{1.7cm}@{\\hspace{4pt}}"
+            ">{\\centering\\arraybackslash}m{2.3cm}@{\\hspace{4pt}}"
+            ">{\\centering\\arraybackslash}m{3.0cm}@{\\hspace{14pt}}"
+            ">{\\centering\\arraybackslash}X@{\\hspace{2pt}}}\n"
+            "\\textbf{Bulgu No} & \\multicolumn{1}{c}{\\textbf{ISCN}} & "
+            "\\multicolumn{1}{c}{\\textbf{Değişim Türü}} & "
+            "\\multicolumn{1}{c}{\\makecell{\\textbf{Değişim}\\\\\\textbf{Boyutu (bp)}}} & "
+            "\\multicolumn{1}{c}{\\textbf{Sınıflandırma}} & "
+            "\\multicolumn{1}{c}{\\textbf{Linkler}} \\\\\n"
+            "\\hline\n"
+        )
         for no, (iscn, type_safe, cnv_length_safe, class_safe, links_latex) in enumerate(bulgular_rows, start=1):
-            latex_string += (
-                f"{no} & {iscn} & {type_safe} & {cnv_length_safe} & "
-                f"{class_safe} & {links_latex} \\\\\n\\hline\n"
-            )
+            latex_string += f"{no} & {iscn} & {type_safe} & {cnv_length_safe} & {class_safe} & {links_latex} \\\\\n\\hline\n"
         latex_string += "\\end{tabularx}\n\\setlength{\\tabcolsep}{6pt}\n\n"
 
-        for no, (bulgu_note, known_genes_str, all_genes_str) in enumerate(genes_blocks, start=1):
-            latex_string += f"""
-\\subsubsection{{Bulgu No {no}:}}
-"""
+        for no, (bulgu_note, dosage_genes_str, morbid_genes_str, omim_genes_str) in enumerate(genes_blocks, start=1):
+            latex_string += f"\\subsubsection{{Bulgu No {no}:}}\n"
             if bulgu_note:
-                latex_string += f"""\\noindent\\textbf{{Not:}} {bulgu_note}\n\n"""
-            latex_string += f"""\\noindent\\textbf{{Bilinen veya Tahmin Edilen Dosage-Sensitive Genler:}}
-{known_genes_str}
-
-\\noindent\\textbf{{Protein Kodlayan Genler:}}
-{all_genes_str}
-
-\\vspace{{0.5cm}}
-"""
+                latex_string += f"\\noindent\\textbf{{Not:}} {bulgu_note}\n\n"
+            latex_string += (
+                f"\\noindent\\textbf{{Bilinen veya Tahmin Edilen Dosage-Sensitive Genler:}}\n"
+                f"{dosage_genes_str}\n\n"
+                f"\\noindent\\textbf{{OMIM Genler:}}\n"
+                f"{omim_genes_str}\n\n"
+                f"\\noindent\\textbf{{Morbid Genler:}}\n"
+                f"{morbid_genes_str}\n\n"
+                f"\\vspace{{0.5cm}}\n"
+            )
 
         if args.include_plots:
-            for plot_block in plot_blocks:
-                latex_string += plot_block
+            if plot_images_latex:
+                for img in plot_images_latex:
+                    latex_string += f"\n\\vspace{{0.5cm}}\n\\begin{{center}}\n{img}\n\\end{{center}}\n"
+            if any_plot_missing:
+                latex_string += "\n\\vspace{0.5cm}\n\\begin{center}\n\\par\\noindent\\textit{(Plot mevcut değil.)}\n\\end{center}\n"
 
         if quality_notes:
-            latex_string += """
-\\newpage
-\\section{Kalite Notu}
-"""
-            latex_string += """
-\\begin{tabularx}{\\textwidth}{m{1.4cm} X X >{\\centering\\arraybackslash}m{2.2cm}}
-\\textbf{Bulgu No} & \\textbf{Kanıtlar} & \\textbf{Sınıflandırma (Skor)} & \\makecell{\\textbf{Kanıt}\\\\\\textbf{Güven Düzeyi}} \\\\
-\\hline
-"""
+            latex_string += "\n\\newpage\n\\section{Kalite Notu}\n"
+            latex_string += (
+                "\\begin{tabularx}{\\textwidth}{m{1.4cm} X X >{\\centering\\arraybackslash}m{2.2cm}}\n"
+                "\\textbf{Bulgu No} & \\textbf{Kanıtlar} & \\textbf{Sınıflandırma (Skor)} & "
+                "\\makecell{\\textbf{CNV}\\\\\\textbf{Güven Düzeyi}} \\\\\n"
+                "\\hline\n"
+            )
             for no, q in enumerate(quality_notes, start=1):
-                latex_string += (
-                    f"{no} & {q['evidences']} & {q['classification_score']} & "
-                    f"{q['confidence']} \\\\\n\\hline\n"
-                )
+                latex_string += f"{no} & {q['evidences']} & {q['classification_score']} & {q['confidence']} \\\\\n\\hline\n"
             latex_string += "\\end{tabularx}\n\n"
 
     with open(args.tex_template, "r", encoding="utf-8") as in_file, open(
         args.output_file, "w", encoding="utf-8"
     ) as out_file:
-
         latex_string = re.sub(r"(?<!\\)_", r"\\_", latex_string)
         output_template = in_file.read().replace("%%BULGULAR%%", latex_string)
 
         if chipsample_notes:
-            escaped_notes = "".join(escape_latex(note) for note in chipsample_notes)
+            if isinstance(chipsample_notes, list):
+                escaped_notes = " ".join(escape_latex(str(note)) for note in chipsample_notes)
+            else:
+                escaped_notes = escape_latex(str(chipsample_notes))
             output_template = output_template.replace(
-                "%%CHIPSAMPLENOTES%%", "\\textbf{{Not:}} " + escaped_notes
+                "%%CHIPSAMPLENOTES%%", "\\textbf{{Hasta Notu:}} " + escaped_notes
             )
         else:
             output_template = output_template.replace("%%CHIPSAMPLENOTES%%", "")
 
         output_template = output_template.replace(
-            "%%genome_plot%%", f"{args.plot_dir}/plot_genome.png"
+            "%%genome_plot%%", (args.plot_dir or "").replace("_", "\\_") + "/plot\\_genome.png"
         )
-        output_template = output_template.replace("%%institute%%", args.institute)
-        output_template = output_template.replace("%%canvasVersion%%", args.version)
-        output_template = output_template.replace("%%protocolId%%", args.protocol_id)
-        output_template = output_template.replace(
-            "%%summaryDate%%", date.today().strftime("%B %d, %Y")
-        )
-        output_template = output_template.replace("%%chipId%%", chip_id)
-        output_template = output_template.replace("%%chipType%%", args.chip_type)
-        output_template = output_template.replace("%%chipPosition%%", position)
-
+        output_template = output_template.replace("%%institute%%", (args.institute or "").replace("_", "\\_"))
+        output_template = output_template.replace("%%canvasVersion%%", (args.version or "").replace("_", "\\_"))
+        output_template = output_template.replace("%%protocolId%%", (args.protocol_id or "").replace("_", "\\_"))
+        output_template = output_template.replace("%%summaryDate%%", date.today().strftime("%B %d, %Y"))
+        output_template = output_template.replace("%%chipId%%", (chip_id or "").replace("_", "\\_"))
+        output_template = output_template.replace("%%chipType%%", (args.chip_type or "").replace("_", "\\_"))
+        output_template = output_template.replace("%%chipPosition%%", (position or "").replace("_", "\\_"))
+        output_template = re.sub(r"(?<!\\)_", r"\\_", output_template)
         out_file.write(output_template)
 
 
