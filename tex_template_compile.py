@@ -349,7 +349,7 @@ def main():
             if bulgu_note:
                 latex_string += f"\\noindent\\textbf{{Not:}} {bulgu_note}\n\n"
             latex_string += (
-                f"\\noindent\\textbf{{Bilinen veya Tahmin Edilen Dosage-Sensitive Genler:}}\n"
+                f"\\noindent\\textbf{{Dosage-Sensitive Genler:}}\n"
                 f"{dosage_genes_str}\n\n"
                 f"\\noindent\\textbf{{OMIM Genler:}}\n"
                 f"{omim_genes_str}\n\n"
