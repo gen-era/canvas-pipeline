@@ -26,6 +26,7 @@ params.include_plots = false
 params.cnv_bed = ""
 params.cnv_pk = ""
 params.snap_probes = ""
+params.manual_sex = ""
 
 idat_folder = "s3://canvas/chip_data/${params.chip_id}/idats"
 output_dir = "s3://canvas/chip_data/${params.chip_id}"
@@ -42,15 +43,20 @@ workflow {
         baf = "s3://canvas/chip_data/${params.chip_id}/bedgraphs/${sampleId}.BAF.bedgraph.gz"
         lrr = "s3://canvas/chip_data/${params.chip_id}/bedgraphs/${sampleId}.LRR.bedgraph.gz"
 
-        makesexfile(sample_summary)
-
+        def sex_file_channel
+        if (params.manual_sex in ["M", "F"]) {
+            make_manual_sexfile(sampleId, params.manual_sex)
+            sex_file_channel = make_manual_sexfile.out.first()
+        } else {
+            makesexfile(sample_summary)
+            sex_file_channel = makesexfile.out.first()
+        }
         if (params.snap_probes.toBoolean()) {
             snap_probes(cnv_input, lrr)
             cnv_input = snap_probes.out.bed.map { bed -> [sampleId, params.cnv_pk, bed] }
         }
-
         cnv_addiscn(cnv_input, band)
-        cnv_classification_bed(cnv_input, makesexfile.out.first())
+        cnv_classification_bed(cnv_input, sex_file_channel)
         cnv_classification(cnv_classification_bed.out)
 
 
@@ -189,6 +195,20 @@ process makesexfile {
     '''
     awk -F"," '{printf "%s\\t%s\\n", $1, $7}' !{sample_summary} > sex_file
     '''
+}
+
+process make_manual_sexfile {
+    memory "500 MB"
+    cpus 1
+    input:
+    val sampleId
+    val manual_sex
+    output:
+    path "sex_file"
+    script:
+    """
+    printf "%s\\t%s\\n" "${sampleId}" "${manual_sex}" > sex_file
+    """
 }
 
 process idat2gtc {
