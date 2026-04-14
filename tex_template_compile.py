@@ -99,6 +99,101 @@ def build_region_links_latex(cnv: dict) -> str:
     return f"\\makecell{{\\href{{{clingen_safe}}}{{ClinGen}} \\\\ \\href{{{decipher_safe}}}{{DECIPHER}}}}"
 
 
+def _as_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "on", "evet"}
+
+
+def is_mosaic_cnv(cnv: dict) -> bool:
+    for key in ("mosaic", "Mosaic", "is_mosaic", "IsMosaic", "mozaik", "Mozaik"):
+        if key in cnv and _as_bool(cnv.get(key)):
+            return True
+
+    type_value = str(cnv.get("Type", "") or "").strip().lower()
+    if "mosaic" in type_value or "mozaik" in type_value:
+        return True
+
+    iscn_value = str(cnv.get("iscn", "") or "").strip().lower()
+    if "mos" in iscn_value:
+        return True
+
+    return False
+
+
+def clean_iscn_for_mosaic(iscn_value: str) -> str:
+    cleaned = re.sub(r"x\d+", "", iscn_value)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
+    return cleaned
+
+
+def mosaic_observation_note(cnv: dict, mosaic_ratio: str) -> str:
+    chrom, start, end = get_region_from_cnv(cnv)
+    if chrom and start and end:
+        position_text = f"{chrom}:{start}-{end}"
+    else:
+        position_text = str(cnv.get("chr_info", "") or "Bu bolge").strip() or "Bu bolge"
+
+    type_raw = str(cnv.get("Type", "") or "").upper()
+    if "DEL" in type_raw:
+        direction = "kayıp"
+    elif "DUP" in type_raw:
+        direction = "kazanç"
+    else:
+        direction = "değişim"
+
+    ratio_text = mosaic_ratio or "%"
+    return (
+        f"{position_text} pozisyonunda {ratio_text} oranında mozaik {direction} gözlenmiştir. "
+        "FISH/Karyotip ile doğrulanması önerilir."
+    )
+
+
+def summary_note_from_chipsample_notes(chipsample_notes, mode: str = "default") -> str:
+    forced = (mode or "default").strip().lower()
+
+    if forced == "quality_poor":
+        return "Yapılan mikroarray analizi sonucunda data kalitesi analiz için uygun değildir."
+    if forced == "balanced_translocation":
+        return "Resiprokal ve robertsonian translokasyonlar gibi dengeli kromozomal değişiklikler array ile tespit edilememektedir."
+    if forced == "default":
+        return ""
+
+    if not chipsample_notes:
+        return ""
+
+    notes_text = " ".join(str(n) for n in chipsample_notes if n is not None).lower()
+
+    quality_keywords = (
+        "data kalitesi",
+        "kalite düşük",
+        "quality poor",
+        "quality is poor",
+        "analiz için uygun değildir",
+        "uygun degildir",
+        "not suitable",
+    )
+    balanced_translocation_keywords = (
+        "translokasyon",
+        "translocation",
+        "resiprokal",
+        "reciprocal",
+        "robertsonian",
+        "dengeli",
+        "balanced",
+    )
+
+    lines = []
+    if any(k in notes_text for k in quality_keywords):
+        lines.append("Yapılan mikroarray analizi sonucunda data kalitesi analiz için uygun değildir.")
+    if any(k in notes_text for k in balanced_translocation_keywords):
+        lines.append("Resiprokal ve robertsonian translokasyonlar gibi dengeli kromozomal değişiklikler array ile tespit edilememektedir.")
+
+    return "\n\n".join(lines)
+
+
 def process_cnv_file(file_path):
     cnv_data = {}
     with open(file_path, "r") as f:
@@ -194,12 +289,14 @@ def main():
 
     args = parser.parse_args()
     chipsample_notes = None
+    report_summary_mode = "default"
 
     if args.cnvs:
         chip_id, position = args.sample_id.split("_")
         with open(args.cnvs) as f:
             cnvs = json.load(f)
             chipsample_notes = cnvs["chipsample_notes"]
+            report_summary_mode = str(cnvs.get("report_summary_mode", "default") or "default")
             cnvs = cnvs["cnvs"]
     else:
         cnv_path = Path(args.cnv_file)
@@ -221,10 +318,14 @@ def main():
     plot_images_latex = []
 
     if not cnvs:
-        latex_string += (
-            "Yapılan mikroarray analizi sonucunda gözlenen kopya sayısı değişimleri "
-            "arasında klinik önemi olan bir bulgu gözlenmemiştir."
-        )
+        special_summary = summary_note_from_chipsample_notes(chipsample_notes, report_summary_mode)
+        if special_summary:
+            latex_string += escape_latex(special_summary)
+        else:
+            latex_string += (
+                "Yapılan mikroarray analizi sonucunda gözlenen kopya sayısı değişimleri "
+                "arasında klinik önemi olan bir bulgu gözlenmemiştir."
+            )
     else:
         for variant_id, cnv in cnvs.items():
             if "Chromosome" not in cnv.keys():
@@ -291,18 +392,38 @@ def main():
                 else:
                     bulgu_note = escape_latex(str(cnv["notes"]))
 
-            type_safe = str(cnv.get("Type", "")).replace("_", "\\_")
-            class_safe_raw = str(cnv.get("Classification", ""))
-            class_safe = class_safe_raw.replace("_", "\\_")
+            is_mosaic = is_mosaic_cnv(cnv)
+            mosaic_ratio = str(cnv.get("mosaic_ratio", "") or "").strip()
+
+            if is_mosaic and mosaic_ratio:
+                type_value = f"Mozaik ({mosaic_ratio})"
+            elif is_mosaic:
+                type_value = "Mozaik"
+            else:
+                type_value = str(cnv.get("Type", "") or "")
+
+            if is_mosaic:
+                mosaic_note = escape_latex(mosaic_observation_note(cnv, mosaic_ratio))
+                if bulgu_note:
+                    bulgu_note = f"{bulgu_note} {mosaic_note}"
+                else:
+                    bulgu_note = mosaic_note
+
+            type_safe = escape_latex(type_value)
+            class_safe_raw = "-" if is_mosaic else str(cnv.get("Classification", ""))
+            class_safe = escape_latex(class_safe_raw)
             cnv_length_safe = str(cnv_length).replace("_", "\\_")
             links_latex = build_region_links_latex(cnv)
 
             evidence_codes = " ".join(evidence_in_report.keys())
-            if evidence_codes:
+            if evidence_codes and not is_mosaic:
                 evidence_codes_safe = evidence_codes.replace("_", "\\_")
                 class_cell = f"\\makecell{{{class_safe}\\\\({evidence_codes_safe})}}"
             else:
                 class_cell = class_safe
+
+            if is_mosaic:
+                iscn = f"{clean_iscn_for_mosaic(iscn)} (Mozaik)"
 
             bulgular_rows.append((iscn, type_safe, cnv_length_safe, class_cell, links_latex))
             genes_blocks.append((bulgu_note, dosage_genes_str, morbid_genes_str, omim_genes_str))
@@ -313,7 +434,7 @@ def main():
             quality_notes.append({
                 "iscn": iscn,
                 "evidences": evidence_safe,
-                "classification_score": f"{class_safe} ({total_score})",
+                "classification_score": "-" if is_mosaic else f"{class_safe} ({total_score})",
                 "confidence": cnv_conf_safe,
             })
 
