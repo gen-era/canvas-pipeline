@@ -193,7 +193,17 @@ def summary_note_from_chipsample_notes(chipsample_notes, mode: str = "default") 
 
     return "\n\n".join(lines)
 
-
+def display_classification_label(value: str) -> str:
+    raw = str(value or "").strip().lower()
+    mapping = {
+        "pathogenic": "Pathogenic",
+        "likely pathogenic": "Likely Pathogenic",
+        "uncertain significance": "Uncertain Significance",
+        "likely benign": "Likely Benign",
+        "benign": "Benign",
+    }
+    return mapping.get(raw, str(value or "").strip())
+    
 def process_cnv_file(file_path):
     cnv_data = {}
     with open(file_path, "r") as f:
@@ -327,27 +337,44 @@ def main():
                 "arasında klinik önemi olan bir bulgu gözlenmemiştir."
             )
     else:
+        legacy_order = [
+            "1A-B", "2A", "2B", "2C", "2D", "2E", "2F", "2G", "2H", "2I", "2J",
+            "2K", "2L", "3", "4A", "4B", "4C", "4D", "4E", "4F-H", "4I", "4J",
+            "4K", "4L", "4M", "4N", "4O", "5A", "5B", "5C", "5D", "5E", "5F", "5G", "5H",
+        ]
+        def _is_evidence_key(key: str) -> bool:
+            return bool(
+                re.fullmatch(r"\d+[A-Z](?:-[A-Z])?", key)
+                or re.fullmatch(r"\d+[A-Z]\d", key)
+                or key == "3"
+            )
+        def _evidence_sort_key(key: str):
+            if key in legacy_order:
+                return (0, legacy_order.index(key), key)
+            m = re.match(r"(\d+)(.*)", key)
+            if not m:
+                return (2, 999, key)
+            return (1, int(m.group(1)), m.group(2))
+        
         for variant_id, cnv in cnvs.items():
             if "Chromosome" not in cnv.keys():
                 continue
-
             cnv_length = cnv["length_info"].split("=")[1]
             cnv_conf = get_confidence(cnv)
             iscn = cnv["iscn"].replace("_", "\\_")
-
-            evidences = [
-                "1A-B", "2A", "2B", "2C", "2D", "2E", "2F", "2G", "2H", "2I", "2J",
-                "2K", "2L", "3", "4A", "4B", "4C", "4D", "4E", "4F-H", "4I", "4J",
-                "4K", "4L", "4M", "4N", "4O", "5A", "5B", "5C", "5D", "5E", "5F", "5G", "5H",
-            ]
+            dynamic_evidences = [k for k in cnv.keys() if _is_evidence_key(str(k))]
+            dynamic_evidences = sorted(dynamic_evidences, key=_evidence_sort_key)
             evidence_in_report = {}
-            for evidence in evidences:
+            
+            for evidence in dynamic_evidences:
                 evidence_value = cnv.get(evidence, 0)
-                if evidence_value == "":
-                    evidence_value = 0.0
-                if float(evidence_value) != 0:
+                if evidence_value in ("", None):
+                    continue
+                try:
+                    if float(evidence_value) != 0:
+                        evidence_in_report[evidence] = evidence_value
+                except (TypeError, ValueError):
                     evidence_in_report[evidence] = evidence_value
-
             evidence_str = " ".join([f"{k}: {v}" for k, v in evidence_in_report.items()])
 
             dosage_genes = get_first_nonempty(cnv, [
@@ -410,7 +437,7 @@ def main():
                     bulgu_note = mosaic_note
 
             type_safe = escape_latex(type_value)
-            class_safe_raw = "-" if is_mosaic else str(cnv.get("Classification", ""))
+            class_safe_raw = "-" if is_mosaic else display_classification_label(cnv.get("Classification", ""))
             class_safe = escape_latex(class_safe_raw)
             cnv_length_safe = str(cnv_length).replace("_", "\\_")
             links_latex = build_region_links_latex(cnv)
