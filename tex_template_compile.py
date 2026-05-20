@@ -155,7 +155,7 @@ def summary_note_from_chipsample_notes(chipsample_notes, mode: str = "default") 
     forced = (mode or "default").strip().lower()
 
     if forced == "quality_poor":
-        return "Yapılan mikroarray analizi sonucunda data kalitesi analiz için uygun değildir."
+        return "Yapılan mikroarray çalışması sonucunda veri kalitesinin analiz için uygun olmadığı saptanmıştır."
     if forced == "balanced_translocation":
         return "Resiprokal ve robertsonian translokasyonlar gibi dengeli kromozomal değişiklikler array ile tespit edilememektedir."
     if forced == "default":
