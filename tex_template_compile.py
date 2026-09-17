@@ -16,7 +16,7 @@ def escape_latex(text):
         "%": "\\%",
         "$": "\\$",
         "#": "\\#",
-        "_": "\\_",
+        "_": "\\_\\allowbreak",
         "{": "\\{",
         "}": "\\}",
         "~": "\\textasciitilde{}",
@@ -320,6 +320,24 @@ def main():
             merged_dict = {**cnv_dict, **score_dict}
             cnvs[variant_id] = merged_dict
 
+    # A separate patient note beginning with this marker supplies the existing
+    # Findings text when no CNV is selected. Never print the marker itself.
+    upd_summaries = []
+    report_notes = []
+    use_upd_summary = not cnvs and report_summary_mode.strip().lower() == "default"
+    for note in chipsample_notes or []:
+        match = re.match(r"^\s*UPD\s+[ÖO]ZET[İI]\s*:\s*(.*)$", str(note), re.IGNORECASE | re.DOTALL)
+        if match:
+            summary = match.group(1).strip()
+            if summary:
+                if use_upd_summary:
+                    upd_summaries.append(summary)
+                else:
+                    report_notes.append(summary)
+        else:
+            report_notes.append(note)
+    chipsample_notes = report_notes
+
     latex_string = ""
     quality_notes = []
     bulgular_rows = []
@@ -328,7 +346,7 @@ def main():
     plot_images_latex = []
 
     if not cnvs:
-        special_summary = summary_note_from_chipsample_notes(chipsample_notes, report_summary_mode)
+        special_summary = "\n\n".join(upd_summaries) or summary_note_from_chipsample_notes(chipsample_notes, report_summary_mode)
         if special_summary:
             latex_string += escape_latex(special_summary)
         else:
@@ -344,7 +362,7 @@ def main():
         ]
         def _is_evidence_key(key: str) -> bool:
             return bool(
-                re.fullmatch(r"\d+[A-Z](?:-[A-Z])?", key)
+                re.fullmatch(r"\d+[A-Z](?:-[A-Z]|-?\d)?", key)
                 or re.fullmatch(r"\d+[A-Z]\d", key)
                 or key == "3"
             )
@@ -537,7 +555,7 @@ def main():
             else:
                 escaped_notes = escape_latex(str(chipsample_notes))
             output_template = output_template.replace(
-                "%%CHIPSAMPLENOTES%%", "\\textbf{{Hasta Notu:}} " + escaped_notes
+                "%%CHIPSAMPLENOTES%%", "\\noindent\\textbf{Hasta Notu:} " + escaped_notes
             )
         else:
             output_template = output_template.replace("%%CHIPSAMPLENOTES%%", "")
